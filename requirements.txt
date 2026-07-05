@@ -1,0 +1,23 @@
+# ===========================================
+# 我是学霸 — Python 依赖清单
+# ===========================================
+# 安装方式：pip install -r requirements.txt
+# 或使用一键脚本：install.bat (Windows) / install.sh (macOS/Linux)
+#
+
+# ---- 核心依赖（看板 + API 服务，必装）----
+flask>=3.0
+flask-cors>=4.0
+
+# ---- 视频制作流水线（可选，不用视频可跳过）----
+edge-tts>=6.1
+pillow>=10.0
+numpy>=1.24
+scipy>=1.11
+
+# ---- EduLab 交互教学技能（可选，高中几何/化学需要）----
+sympy>=1.12
+
+# ---- SVG 动画帧捕获（可选，默认注释）----
+# playwright>=1.40
+# 安装后还需执行：playwright install chromium

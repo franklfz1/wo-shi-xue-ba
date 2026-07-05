@@ -1,0 +1,53 @@
+{
+  "project": {
+    "name": "数学知识点短视频",
+    "version": "1.0.0",
+    "author": "我是学霸"
+  },
+  "video": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "codec": "libx264",
+    "pix_fmt": "yuv420p",
+    "bitrate": "2M",
+    "audio_codec": "aac",
+    "audio_bitrate": "128k",
+    "duration_target": 70
+  },
+  "voice": {
+    "voice": "zh-CN-XiaoxiaoNeural",
+    "rate": "+0%",
+    "volume": "+0%"
+  },
+  "animation": {
+    "width": 1080,
+    "height": 1080,
+    "fps": 30,
+    "style": "power_assembly",
+    "duration": 3
+  },
+  "subtitle": {
+    "enabled": true,
+    "font": "Microsoft YaHei",
+    "size": 22,
+    "color": "&H00FFFFFF",
+    "outline_color": "&H00000000",
+    "outline_width": 2,
+    "bold": 0,
+    "italic": 0,
+    "alignment": 2,
+    "position": "bottom",
+    "margin_v": 40
+  },
+  "ffmpeg": {
+    "path": "ffmpeg",
+    "ffprobe_path": "ffprobe"
+  },
+  "output": {
+    "dir": "output",
+    "temp_dir": "output/temp",
+    "format": "mp4",
+    "naming_pattern": "{topic}_{date}"
+  }
+}

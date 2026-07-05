@@ -1,0 +1,37 @@
+# 学习数据（含学生个人记录，不应入库）
+records/*/mastered.md
+records/*/errors.md
+records/*/review-log.md
+records/*/todo.md
+review/next-review.json
+review/errors-review.json
+
+# 教学产物（运行时生成）
+artifacts/**/*.mp4
+artifacts/**/*.mp3
+artifacts/**/*.png
+artifacts/**/*.jpg
+artifacts/**/*.webp
+artifacts/**/*.gif
+artifacts/**/*.html
+
+# 视频管线输出
+video-pipeline/output/
+video-pipeline/assets/sfx/*.wav
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# WorkBuddy
+.workbuddy/

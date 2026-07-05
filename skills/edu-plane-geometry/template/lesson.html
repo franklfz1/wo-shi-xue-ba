@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平面几何教学</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+  .header {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .header h1 { font-size: 22px; margin-bottom: 6px; }
+  .header .meta-tag {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: #e0e7ff;
+    color: #4338ca;
+    margin-right: 8px;
+  }
+  .header .question {
+    margin-top: 10px;
+    font-size: 15px;
+    color: #475569;
+    white-space: pre-line;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+  }
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+  }
+
+  .figure-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  #figure-svg {
+    width: 100%;
+    height: 480px;
+    border-radius: 8px;
+    background: #fafafa;
+  }
+
+  .view-controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #4f46e5; color: white; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-secondary { background: #e2e8f0; color: #475569; }
+  .btn-secondary:hover { background: #cbd5e1; }
+
+  .steps-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    max-height: 560px;
+  }
+  .step-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+  }
+  .step-item {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+  }
+  .step-item:hover { background: #f1f5f9; }
+  .step-item.active {
+    background: #eef2ff;
+    border-color: #818cf8;
+  }
+  .step-item.done { opacity: 0.6; }
+  .step-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #312e81;
+  }
+  .step-item.active .step-title { color: #4338ca; }
+  .step-content {
+    font-size: 13px;
+    color: #64748b;
+    white-space: pre-line;
+  }
+
+  .step-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .step-nav .indicator {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  .answer-section {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    display: none;
+  }
+  .answer-section.show { display: block; }
+  .answer-section .label {
+    font-size: 12px;
+    color: #15803d;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .answer-section .text {
+    font-size: 15px;
+    color: #14532d;
+    font-weight: 500;
+  }
+
+  /* SVG element styles */
+  .svg-vertex-label {
+    font-size: 16px;
+    font-weight: 700;
+    fill: #1e293b;
+    font-family: "Times New Roman", serif;
+  }
+  .svg-dim-label {
+    font-size: 13px;
+    fill: #475569;
+    font-family: -apple-system, sans-serif;
+  }
+  .svg-face-label {
+    font-size: 24px;
+    font-weight: 700;
+    fill: #1e293b;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .svg-aux-label {
+    font-size: 13px;
+    fill: #7c3aed;
+    font-style: italic;
+  }
+  .svg-edge { stroke: #334155; stroke-width: 2; fill: none; }
+  .svg-edge-dashed { stroke: #7c3aed; stroke-width: 1.5; stroke-dasharray: 6,4; fill: none; }
+  .svg-edge-highlight { stroke: #4f46e5; stroke-width: 3.5; }
+  .svg-vertex-dot { fill: #1e293b; }
+  .svg-vertex-highlight { fill: #4f46e5; r: 6; }
+  .svg-equal-mark { stroke: #334155; stroke-width: 1.5; }
+  .svg-right-angle { stroke: #334155; stroke-width: 1.5; fill: none; }
+  .svg-parallel-mark { stroke: #334155; stroke-width: 1.5; fill: #334155; }
+  .svg-angle-arc { stroke: #6366f1; stroke-width: 1.5; fill: none; }
+  .svg-angle-label { font-size: 12px; fill: #6366f1; }
+  .svg-region { opacity: 0.3; }
+  .svg-region-highlight { opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1 id="title">平面几何</h1>
+    <div id="meta-tags"></div>
+    <div class="question" id="question"></div>
+  </div>
+  <div class="main">
+    <div class="figure-panel">
+      <svg id="figure-svg" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="view-controls">
+        <button class="btn btn-secondary" id="btn-toggle-answer">显示答案</button>
+        <button class="btn btn-secondary" id="btn-reset">重置</button>
+      </div>
+      <div class="answer-section" id="answer-section">
+        <div class="label">答案</div>
+        <div class="text" id="answer-text"></div>
+      </div>
+    </div>
+    <div class="steps-panel">
+      <div class="step-list" id="step-list"></div>
+      <div class="step-nav">
+        <button class="btn btn-secondary" id="btn-prev">上一步</button>
+        <span class="indicator" id="step-indicator">1 / 1</span>
+        <button class="btn btn-primary" id="btn-next">下一步</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var LESSON_DATA = __LESSON_DATA__;
+
+// ===================== Coordinate Transform =====================
+
+function computeTransform(vertices, viewW, viewH, margin) {
+  if (!vertices || vertices.length === 0) {
+    return { scale: 1, offsetX: 0, offsetY: 0 };
+  }
+  var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  vertices.forEach(function(v) {
+    if (v.x < minX) minX = v.x;
+    if (v.x > maxX) maxX = v.x;
+    if (v.y < minY) minY = v.y;
+    if (v.y > maxY) maxY = v.y;
+  });
+  var w = maxX - minX || 1;
+  var h = maxY - minY || 1;
+  var scale = Math.min((viewW - 2 * margin) / w, (viewH - 2 * margin) / h);
+  scale = Math.max(scale, 0.1); // 防止除零
+  var offsetX = margin + (viewW - 2 * margin - w * scale) / 2 - minX * scale;
+  var offsetY = margin + (viewH - 2 * margin - h * scale) / 2 + maxY * scale;
+  return { scale: scale, offsetX: offsetX, offsetY: offsetY };
+}
+
+function sx(x, t) { return x * t.scale + t.offsetX; }
+function sy(y, t) { return -y * t.scale + t.offsetY; }
+
+// ===================== SVG Helpers =====================
+
+var NS = "http://www.w3.org/2000/svg";
+
+function el(tag, attrs) {
+  var e = document.createElementNS(NS, tag);
+  if (attrs) {
+    for (var k in attrs) {
+      if (k === "text") e.textContent = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+  }
+  return e;
+}
+
+function edgeMidpoint(e, vertices, t) {
+  var v1 = vertices[e.from];
+  var v2 = vertices[e.to];
+  return {
+    x: (sx(v1.x, t) + sx(v2.x, t)) / 2,
+    y: (sy(v1.y, t) + sy(v2.y, t)) / 2
+  };
+}
+
+function edgeDirection(e, vertices, t) {
+  var v1 = vertices[e.from];
+  var v2 = vertices[e.to];
+  var dx = sx(v2.x, t) - sx(v1.x, t);
+  var dy = sy(v2.y, t) - sy(v1.y, t);
+  var len = Math.sqrt(dx * dx + dy * dy) || 1;
+  return { dx: dx / len, dy: dy / len, len: len };
+}
+
+// ===================== Drawing Functions =====================
+
+function drawRegions(svg, data, t, highlights) {
+  var fig = data.figure;
+  if (!fig.regions) return;
+  var hi = (highlights && highlights.regions) || [];
+
+  fig.regions.forEach(function(region, i) {
+    var pts = region.vertices.map(function(vi) {
+      return sx(fig.vertices[vi].x, t) + "," + sy(fig.vertices[vi].y, t);
+    }).join(" ");
+    var opacity = region.opacity || 0.3;
+    if (hi.indexOf(i) >= 0) opacity = Math.min(opacity + 0.3, 0.7);
+    var poly = el("polygon", {
+      points: pts,
+      fill: region.fill,
+      "fill-opacity": opacity,
+      "data-region": i
+    });
+    svg.appendChild(poly);
+  });
+}
+
+function drawAuxLines(svg, data, t, highlights) {
+  var fig = data.figure;
+  if (!fig.auxLines) return;
+
+  fig.auxLines.forEach(function(line, i) {
+    var v1 = fig.vertices[line.from];
+    var v2 = fig.vertices[line.to];
+    var path = el("line", {
+      x1: sx(v1.x, t), y1: sy(v1.y, t),
+      x2: sx(v2.x, t), y2: sy(v2.y, t),
+      class: "svg-edge-dashed"
+    });
+    svg.appendChild(path);
+
+    if (line.label) {
+      var mx = (sx(v1.x, t) + sx(v2.x, t)) / 2;
+      var my = (sy(v1.y, t) + sy(v2.y, t)) / 2;
+      var label = el("text", {
+        x: mx + 6, y: my - 6,
+        class: "svg-aux-label",
+        text: line.label
+      });
+      svg.appendChild(label);
+    }
+  });
+}
+
+function drawEdges(svg, data, t, highlights) {
+  var fig = data.figure;
+  if (!fig.edges) return;
+  var hi = (highlights && highlights.edges) || [];
+
+  fig.edges.forEach(function(edge, i) {
+    var v1 = fig.vertices[edge.from];
+    var v2 = fig.vertices[edge.to];
+    var className = "svg-edge";
+    if (edge.style === "dashed") className = "svg-edge-dashed";
+    if (hi.indexOf(i) >= 0) className += " svg-edge-highlight";
+
+    var line = el("line", {
+      x1: sx(v1.x, t), y1: sy(v1.y, t),
+      x2: sx(v2.x, t), y2: sy(v2.y, t),
+      class: className,
+      "data-edge": i
+    });
+    svg.appendChild(line);
+  });
+}
+
+function drawEqualMarks(svg, data, t, highlights) {
+  var fig = data.figure;
+  if (!fig.equalMarks) return;
+  var hi = (highlights && highlights.equalMarks) || [];
+
+  fig.equalMarks.forEach(function(mark, mi) {
+    var count = mark.count;
+    var isHi = hi.indexOf(mi) >= 0;
+    var strokeColor = isHi ? "#4f46e5" : "#334155";
+
+    mark.edges.forEach(function(ei) {
+      var edge = fig.edges[ei];
+      var dir = edgeDirection(edge, fig.vertices, t);
+      var mid = edgeMidpoint(edge, fig.vertices, t);
+      // 垂直方向
+      var px = -dir.dy;
+      var py = dir.dx;
+      var tickLen = 6;
+      var tickGap = 3;
+
+      for (var c = 0; c < count; c++) {
+        var offset = (c - (count - 1) / 2) * tickGap;
+        var cx = mid.x + px * offset;
+        var cy = mid.y + py * offset;
+        var line = el("line", {
+          x1: cx - px * tickLen, y1: cy - py * tickLen,
+          x2: cx + px * tickLen, y2: cy + py * tickLen,
+          stroke: strokeColor,
+          "stroke-width": 1.5
+        });
+        svg.appendChild(line);
+      }
+    });
+  });
+}
+
+function drawRightAngles(svg, data, t) {
+  var fig = data.figure;
+  if (!fig.rightAngles) return;
+  var size = 10;
+
+  fig.rightAngles.forEach(function(ra) {
+    var vertex = fig.vertices[ra.vertex];
+    var e1 = fig.edges[ra.edge1];
+    var e2 = fig.edges[ra.edge2];
+
+    // 找出从顶点出发的方向
+    var d1 = getDirectionFromVertex(vertex, e1, fig.vertices, t);
+    var d2 = getDirectionFromVertex(vertex, e2, fig.vertices, t);
+
+    var vx = sx(vertex.x, t);
+    var vy = sy(vertex.y, t);
+
+    var p1x = vx + d1.dx * size;
+    var p1y = vy + d1.dy * size;
+    var p3x = vx + d2.dx * size;
+    var p3y = vy + d2.dy * size;
+    var p2x = vx + (d1.dx + d2.dx) * size;
+    var p2y = vy + (d1.dy + d2.dy) * size;
+
+    var path = el("path", {
+      d: "M " + p1x + " " + p1y + " L " + p2x + " " + p2y + " L " + p3x + " " + p3y,
+      class: "svg-right-angle"
+    });
+    svg.appendChild(path);
+  });
+}
+
+function getDirectionFromVertex(vertex, edge, vertices, t) {
+  var other;
+  if (edge.from === fig_indexOf(vertex, vertices)) other = vertices[edge.to];
+  else other = vertices[edge.from];
+
+  var dx = sx(other.x, t) - sx(vertex.x, t);
+  var dy = sy(other.y, t) - sy(vertex.y, t);
+  var len = Math.sqrt(dx * dx + dy * dy) || 1;
+  return { dx: dx / len, dy: dy / len };
+}
+
+function fig_indexOf(vertex, vertices) {
+  for (var i = 0; i < vertices.length; i++) {
+    if (vertices[i] === vertex) return i;
+  }
+  return -1;
+}
+
+function drawParallelMarks(svg, data, t, highlights) {
+  var fig = data.figure;
+  if (!fig.parallelMarks) return;
+  var hi = (highlights && highlights.parallelMarks) || [];
+
+  fig.parallelMarks.forEach(function(mark, mi) {
+    var count = mark.count;
+    var isHi = hi.indexOf(mi) >= 0;
+    var color = isHi ? "#4f46e5" : "#334155";
+
+    mark.edges.forEach(function(ei) {
+      var edge = fig.edges[ei];
+      var dir = edgeDirection(edge, fig.vertices, t);
+      var mid = edgeMidpoint(edge, fig.vertices, t);
+      var arrowSize = 5;
+      var gap = 4;
+
+      for (var c = 0; c < count; c++) {
+        var offset = (c - (count - 1) / 2) * gap;
+        var cx = mid.x + dir.dx * offset;
+        var cy = mid.y + dir.dy * offset;
+        // 画一个 > 箭头（垂直于边的方向）
+        var px = -dir.dy;
+        var py = dir.dx;
+        var path = el("path", {
+          d: "M " + (cx - px * arrowSize) + " " + (cy - py * arrowSize) +
+             " L " + (cx + dir.dx * arrowSize * 0.5) + " " + (cy + dir.dy * arrowSize * 0.5) +
+             " L " + (cx + px * arrowSize) + " " + (cy + py * arrowSize),
+          stroke: color,
+          "stroke-width": 1.5,
+          fill: "none"
+        });
+        svg.appendChild(path);
+      }
+    });
+  });
+}
+
+function drawAngleArcs(svg, data, t, highlights) {
+  var fig = data.figure;
+  if (!fig.angleArcs) return;
+  var hi = (highlights && highlights.angleArcs) || [];
+
+  fig.angleArcs.forEach(function(arc, i) {
+    var vertex = fig.vertices[arc.vertex];
+    var e1 = fig.edges[arc.edge1];
+    var e2 = fig.edges[arc.edge2];
+    var radius = arc.radius || 25;
+    var isHi = hi.indexOf(i) >= 0;
+    var color = isHi ? "#4f46e5" : "#6366f1";
+
+    var vx = sx(vertex.x, t);
+    var vy = sy(vertex.y, t);
+
+    var d1 = getDirectionFromVertex(vertex, e1, fig.vertices, t);
+    var d2 = getDirectionFromVertex(vertex, e2, fig.vertices, t);
+
+    var a1 = Math.atan2(d1.dy, d1.dx);
+    var a2 = Math.atan2(d2.dy, d2.dx);
+
+    // 确保画的是较小的弧
+    var diff = a2 - a1;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+
+    var endX = vx + radius * Math.cos(a1 + diff);
+    var endY = vy + radius * Math.sin(a1 + diff);
+    var startX = vx + radius * Math.cos(a1);
+    var startY = vy + radius * Math.sin(a1);
+
+    var largeArc = Math.abs(diff) > Math.PI ? 1 : 0;
+    var sweep = diff > 0 ? 1 : 0;
+
+    var path = el("path", {
+      d: "M " + startX + " " + startY +
+         " A " + radius + " " + radius + " 0 " + largeArc + " " + sweep +
+         " " + endX + " " + endY,
+      stroke: color,
+      "stroke-width": 1.5,
+      fill: "none"
+    });
+    svg.appendChild(path);
+
+    if (arc.label) {
+      var midAngle = a1 + diff / 2;
+      var labelR = radius + 8;
+      var label = el("text", {
+        x: vx + labelR * Math.cos(midAngle),
+        y: vy + labelR * Math.sin(midAngle),
+        "text-anchor": "middle",
+        "dominant-baseline": "central",
+        "font-size": 12,
+        fill: color,
+        text: arc.label
+      });
+      svg.appendChild(label);
+    }
+  });
+}
+
+function drawDimensionLabels(svg, data, t) {
+  var fig = data.figure;
+  if (!fig.dimensionLabels) return;
+
+  fig.dimensionLabels.forEach(function(dl) {
+    var edge = fig.edges[dl.edge];
+    var dir = edgeDirection(edge, fig.vertices, t);
+    var mid = edgeMidpoint(edge, fig.vertices, t);
+    var offset = (dl.offset || 0.35) * 30;
+
+    // 垂直方向（偏移到边的外侧）
+    var px = -dir.dy;
+    var py = dir.dx;
+
+    var labelX = mid.x + px * offset;
+    var labelY = mid.y + py * offset;
+
+    // 根据边的方向决定文字旋转
+    var angle = Math.atan2(dir.dy, dir.dx) * 180 / Math.PI;
+    if (angle > 90) angle -= 180;
+    if (angle < -90) angle += 180;
+
+    var text = el("text", {
+      x: labelX, y: labelY,
+      "text-anchor": "middle",
+      "dominant-baseline": "central",
+      "font-size": 13,
+      fill: "#475569",
+      transform: "rotate(" + angle + " " + labelX + " " + labelY + ")",
+      text: dl.text
+    });
+    svg.appendChild(text);
+  });
+}
+
+function drawVertices(svg, data, t, highlights) {
+  var fig = data.figure;
+  if (!fig.vertices) return;
+  var hi = (highlights && highlights.vertices) || [];
+
+  fig.vertices.forEach(function(v, i) {
+    var x = sx(v.x, t);
+    var y = sy(v.y, t);
+    var isHi = hi.indexOf(i) >= 0;
+    var r = isHi ? 5 : 3.5;
+    var fill = isHi ? "#4f46e5" : "#1e293b";
+
+    var circle = el("circle", {
+      cx: x, cy: y, r: r, fill: fill
+    });
+    svg.appendChild(circle);
+
+    if (v.label) {
+      // 标签位置：根据顶点在图中的位置决定偏移方向
+      var lblOffset = 14;
+      var cx = sx(v.x, t);
+      var cy = sy(v.y, t);
+      // 简单规则：标签放在顶点的右上方
+      var lblX = cx + 8;
+      var lblY = cy - 8;
+      var label = el("text", {
+        x: lblX, y: lblY,
+        "font-size": 16,
+        "font-weight": 700,
+        "font-family": "Times New Roman, serif",
+        fill: "#1e293b",
+        text: v.label
+      });
+      svg.appendChild(label);
+    }
+  });
+}
+
+function drawFaceLabels(svg, data, t) {
+  // 正方体展开图：在每个面中心画文字标签
+  var faces = data.meta && data.meta.faces;
+  if (!faces) return;
+
+  faces.forEach(function(face) {
+    var x = sx(face.center_x, t);
+    var y = sy(face.center_y, t);
+    var label = el("text", {
+      x: x, y: y,
+      "text-anchor": "middle",
+      "dominant-baseline": "central",
+      "font-size": 28,
+      "font-weight": 700,
+      fill: "#1e293b",
+      text: face.label
+    });
+    svg.appendChild(label);
+  });
+}
+
+// ===================== Main Render =====================
+
+var currentStep = 0;
+var answerVisible = false;
+
+function render() {
+  var data = LESSON_DATA;
+  var svg = document.getElementById("figure-svg");
+  svg.innerHTML = "";
+
+  var fig = data.figure;
+  var t = computeTransform(fig.vertices, 600, 480, 40);
+
+  var highlights = {};
+  if (data.steps && data.steps.length > 0 && currentStep < data.steps.length) {
+    highlights = data.steps[currentStep].highlights || {};
+  }
+
+  // 绘制顺序：区域 → 辅助线 → 边 → 标注 → 顶点 → 面标签
+  drawRegions(svg, data, t, highlights);
+  drawAuxLines(svg, data, t, highlights);
+  drawEdges(svg, data, t, highlights);
+  drawEqualMarks(svg, data, t, highlights);
+  drawRightAngles(svg, data, t);
+  drawParallelMarks(svg, data, t, highlights);
+  drawAngleArcs(svg, data, t, highlights);
+  drawDimensionLabels(svg, data, t);
+  drawVertices(svg, data, t, highlights);
+  drawFaceLabels(svg, data, t);
+}
+
+function renderSteps() {
+  var data = LESSON_DATA;
+  var container = document.getElementById("step-list");
+  container.innerHTML = "";
+
+  if (!data.steps || data.steps.length === 0) return;
+
+  data.steps.forEach(function(step, i) {
+    var item = document.createElement("div");
+    item.className = "step-item";
+    if (i === currentStep) item.classList.add("active");
+    if (i < currentStep) item.classList.add("done");
+
+    var title = document.createElement("div");
+    title.className = "step-title";
+    title.textContent = (i + 1) + ". " + step.title;
+
+    var content = document.createElement("div");
+    content.className = "step-content";
+    content.textContent = step.content;
+
+    item.appendChild(title);
+    item.appendChild(content);
+    item.addEventListener("click", function() {
+      currentStep = i;
+      render();
+      renderSteps();
+    });
+    container.appendChild(item);
+  });
+
+  var indicator = document.getElementById("step-indicator");
+  indicator.textContent = (currentStep + 1) + " / " + data.steps.length;
+
+  var btnPrev = document.getElementById("btn-prev");
+  var btnNext = document.getElementById("btn-next");
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep >= data.steps.length - 1;
+  btnPrev.style.opacity = btnPrev.disabled ? 0.4 : 1;
+  btnNext.style.opacity = btnNext.disabled ? 0.4 : 1;
+}
+
+function init() {
+  var data = LESSON_DATA;
+
+  document.getElementById("title").textContent = data.title || "平面几何";
+
+  var metaDiv = document.getElementById("meta-tags");
+  if (data.grade) {
+    var tag1 = document.createElement("span");
+    tag1.className = "meta-tag";
+    tag1.textContent = data.grade;
+    metaDiv.appendChild(tag1);
+  }
+  if (data.topic) {
+    var tag2 = document.createElement("span");
+    tag2.className = "meta-tag";
+    tag2.style.background = "#dcfce7";
+    tag2.style.color = "#15803d";
+    tag2.textContent = data.topic;
+    metaDiv.appendChild(tag2);
+  }
+
+  document.getElementById("question").textContent = data.question || "";
+
+  // 答案
+  document.getElementById("answer-text").textContent = data.answer || "";
+
+  // 按钮
+  document.getElementById("btn-toggle-answer").addEventListener("click", function() {
+    answerVisible = !answerVisible;
+    var section = document.getElementById("answer-section");
+    var btn = document.getElementById("btn-toggle-answer");
+    if (answerVisible) {
+      section.classList.add("show");
+      btn.textContent = "隐藏答案";
+    } else {
+      section.classList.remove("show");
+      btn.textContent = "显示答案";
+    }
+  });
+
+  document.getElementById("btn-reset").addEventListener("click", function() {
+    currentStep = 0;
+    answerVisible = false;
+    document.getElementById("answer-section").classList.remove("show");
+    document.getElementById("btn-toggle-answer").textContent = "显示答案";
+    render();
+    renderSteps();
+  });
+
+  document.getElementById("btn-prev").addEventListener("click", function() {
+    if (currentStep > 0) {
+      currentStep--;
+      render();
+      renderSteps();
+    }
+  });
+
+  document.getElementById("btn-next").addEventListener("click", function() {
+    var total = LESSON_DATA.steps.length;
+    if (currentStep < total - 1) {
+      currentStep++;
+      render();
+      renderSteps();
+    }
+  });
+
+  render();
+  renderSteps();
+}
+
+// Fix: getDirectionFromVertex needs to work without global fig reference
+function getDirectionFromVertex(vertex, edge, vertices, t) {
+  var vIdx = -1;
+  for (var i = 0; i < vertices.length; i++) {
+    if (vertices[i].x === vertex.x && vertices[i].y === vertex.y) {
+      vIdx = i;
+      break;
+    }
+  }
+  var otherIdx = (edge.from === vIdx) ? edge.to : edge.from;
+  var other = vertices[otherIdx];
+  var dx = sx(other.x, t) - sx(vertex.x, t);
+  var dy = sy(other.y, t) - sy(vertex.y, t);
+  var len = Math.sqrt(dx * dx + dy * dy) || 1;
+  return { dx: dx / len, dy: dy / len };
+}
+
+init();
+</script>
+</body>
+</html>

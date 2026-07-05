@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我是学霸 — 学习进度看板</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f4f6fb; color: #1a1a2e; min-height: 100vh; padding: 24px; }
+
+/* Loading State */
+.loading-overlay { position: fixed; inset: 0; background: #f4f6fb; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 1000; transition: opacity 0.4s; }
+.loading-overlay.hidden { opacity: 0; pointer-events: none; }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid #e4e7f0; border-top-color: #1a1a2e; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: #8892a4; }
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+.header-left h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; }
+.header-left p { font-size: 13px; color: #8892a4; margin-top: 4px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-date { background: #fff; border: 1px solid #e4e7f0; border-radius: 8px; padding: 8px 16px; font-size: 13px; color: #8892a4; }
+.refresh-btn { background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+.refresh-btn:hover { background: #2d2d4a; }
+.sync-status { font-size: 11px; color: #22c55e; background: #dcfce7; border-radius: 6px; padding: 4px 10px; }
+
+/* Overview Bar */
+.overview-bar { display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+.overview-card { background: #fff; border: 1px solid #e4e7f0; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 120px; text-align: center; }
+.overview-card .num { font-size: 28px; font-weight: 700; line-height: 1; }
+.overview-card .label { font-size: 11px; color: #8892a4; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.green .num { color: #22c55e; }
+.blue .num { color: #3b82f6; }
+.amber .num { color: #f59e0b; }
+.red .num { color: #ef4444; }
+.gray .num { color: #6b7280; }
+.purple .num { color: #8b5cf6; }
+
+/* Section Titles */
+.section-title { font-size: 14px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+/* Subject Grid */
+.subjects-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 28px; }
+@media(max-width: 1300px) { .subjects-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width: 720px) { .subjects-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width: 480px) { .subjects-grid { grid-template-columns: 1fr; } }
+
+.subject-card { background: #fff; border: 1px solid #e4e7f0; border-radius: 16px; padding: 20px; transition: box-shadow 0.2s; }
+.subject-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.subject-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.chinese-icon { background: #fef3c7; }
+.math-icon { background: #e6f1fb; }
+.english-icon { background: #eaf3de; }
+.science-icon { background: #eeedfe; }
+.geography-icon { background: #e6f7f5; }
+.physics-icon { background: #fee2e2; }
+.card-title { font-size: 15px; font-weight: 700; }
+.card-subtitle { font-size: 11px; color: #8892a4; margin-top: 2px; }
+
+.chart-area { display: flex; align-items: center; justify-content: center; margin-bottom: 16px; position: relative; height: 120px; }
+.donut-wrap { position: relative; }
+.donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.donut-pct { font-size: 22px; font-weight: 700; line-height: 1; }
+.donut-label { font-size: 10px; color: #8892a4; }
+
+.legend { display: flex; flex-direction: column; gap: 6px; }
+.legend-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; }
+.legend-label { display: flex; align-items: center; color: #6b7280; flex: 1; }
+.legend-count { font-weight: 600; color: #1a1a2e; }
+
+.mastered-list { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f5; }
+.mastered-item { font-size: 11px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 5px; }
+.mastered-item::before { content: '✓'; color: #22c55e; font-size: 10px; margin-top: 1px; flex-shrink: 0; }
+.mastered-scroll { max-height: 72px; overflow-y: auto; }
+.mastered-scroll::-webkit-scrollbar { width: 3px; }
+.mastered-scroll::-webkit-scrollbar-thumb { background: #e4e7f0; border-radius: 2px; }
+.geo-empty { font-size: 11px; color: #a78bfa; text-align: center; padding: 8px 0; line-height: 1.6; }
+
+.progress-bar-wrap { margin-top: 12px; }
+.progress-bar-bg { height: 6px; background: #f0f0f5; border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+/* Error badge */
+.error-badge { display: inline-flex; align-items: center; gap: 4px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 99px; padding: 2px 8px; font-size: 10px; color: #dc2626; margin-top: 4px; cursor: pointer; transition: background 0.2s; }
+.error-badge:hover { background: #fee2e2; }
+
+/* Bottom Grid */
+.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media(max-width: 720px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+.panel { background: #fff; border: 1px solid #e4e7f0; border-radius: 16px; padding: 20px; }
+.panel-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.panel-title .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* Task Items */
+.today-task { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; transition: transform 0.15s; }
+.today-task:hover { transform: translateX(3px); }
+.today-chinese { background: #fef3c7; border-left: 3px solid #f59e0b; }
+.today-math { background: #e6f1fb; border-left: 3px solid #3b82f6; }
+.today-english { background: #eaf3de; border-left: 3px solid #22c55e; }
+.today-science { background: #eeedfe; border-left: 3px solid #8b5cf6; }
+.today-geography { background: #e6f7f5; border-left: 3px solid #0d9488; }
+.today-physics { background: #fee2e2; border-left: 3px solid #ef4444; }
+
+.task-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-right: 6px; flex-shrink: 0; color: #fff; }
+.badge-chinese { background: #f59e0b; }
+.badge-math { background: #3b82f6; }
+.badge-english { background: #22c55e; }
+.badge-science { background: #8b5cf6; }
+.badge-geography { background: #0d9488; }
+.badge-physics { background: #ef4444; }
+.badge-error { background: #ef4444; }
+
+.task-info { flex: 1; }
+.task-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+.task-meta { font-size: 11px; color: #8892a4; margin-top: 2px; }
+
+.complete-btn { background: #22c55e; color: #fff; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; font-weight: 600; }
+.complete-btn:hover { background: #16a34a; transform: scale(1.03); }
+.complete-btn:active { transform: scale(0.97); }
+.complete-btn.done { background: #dcfce7; color: #22c55e; cursor: default; pointer-events: none; }
+.complete-btn.error-btn { background: #ef4444; }
+.complete-btn.error-btn:hover { background: #dc2626; }
+.complete-btn.loading { opacity: 0.7; cursor: wait; }
+
+.task-extra { font-size: 11px; color: #92400e; background: #fef3c7; border-radius: 6px; padding: 4px 8px; margin-top: 4px; line-height: 1.5; }
+
+/* Calendar */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-header { font-size: 10px; color: #8892a4; text-align: center; padding-bottom: 6px; font-weight: 600; }
+.cal-day { border-radius: 8px; padding: 6px 4px; text-align: center; font-size: 12px; color: #8892a4; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.cal-day.empty { background: transparent; }
+.cal-day.has-task { background: #fef3c7; color: #92400e; font-weight: 600; }
+.cal-day.today { background: #1a1a2e; color: #fff; font-weight: 700; }
+.cal-day.today.has-task { background: #dc2626; color: #fff; }
+.cal-day .date { font-size: 13px; font-weight: 600; }
+.cal-day .count { font-size: 9px; opacity: 0.85; }
+.review-cal-legend { display: flex; gap: 16px; margin-bottom: 12px; font-size: 11px; color: #8892a4; }
+.leg-item { display: flex; align-items: center; gap: 4px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 3px; }
+.leg-today { background: #1a1a2e; }
+.leg-task { background: #fef3c7; }
+
+/* Recommendation Panel */
+.recommend-grid { display: flex; flex-direction: column; gap: 10px; }
+.rec-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #f8fafc; border-left: 3px solid; transition: transform 0.15s; cursor: pointer; }
+.rec-item:hover { transform: translateX(3px); }
+.rec-chinese { border-left-color: #f59e0b; }
+.rec-math { border-left-color: #3b82f6; }
+.rec-english { border-left-color: #22c55e; }
+.rec-science { border-left-color: #8b5cf6; }
+.rec-geography { border-left-color: #0d9488; }
+.rec-physics { border-left-color: #ef4444; }
+.rec-icon { font-size: 18px; flex-shrink: 0; }
+.rec-content { flex: 1; }
+.rec-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+.rec-reason { font-size: 11px; color: #8892a4; margin-top: 2px; }
+.rec-add-btn { background: #1a1a2e; color: #fff; border: none; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.rec-add-btn:hover { background: #374151; }
+.rec-add-btn.added { background: #dcfce7; color: #22c55e; cursor: default; }
+
+/* Tips */
+.tips { background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 12px; padding: 16px; margin-top: 12px; font-size: 12px; color: #92400e; display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.tips-icon { font-size: 18px; flex-shrink: 0; }
+.no-task { text-align: center; padding: 20px; color: #8892a4; font-size: 13px; }
+
+/* Footer */
+.footer { text-align: center; font-size: 11px; color: #c0c5d0; margin-top: 24px; }
+
+/* Toast Notification */
+.toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a2e; color: #fff; border-radius: 10px; padding: 12px 20px; font-size: 13px; z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: #22c55e; }
+.toast.error { background: #ef4444; }
+
+/* Error Review Panel */
+.errors-panel { background: #fff; border: 1px solid #fecaca; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+.errors-panel .panel-title { color: #dc2626; }
+
+/* Round badge */
+.round-badge { background: #f0f0f5; color: #6b7280; border-radius: 99px; padding: 1px 8px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+
+/* All Done State */
+.all-done { text-align: center; padding: 32px 20px; color: #8892a4; }
+.all-done-icon { font-size: 48px; margin-bottom: 12px; }
+.all-done-text { font-size: 16px; font-weight: 600; color: #374151; }
+.all-done-sub { font-size: 13px; margin-top: 6px; }
+
+/* Animated progress bar */
+@keyframes growWidth { from { width: 0; } }
+.progress-bar-fill { animation: growWidth 1.2s ease-out; }
+
+/* Responsive */
+@media(max-width: 720px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+/* 弹窗样式 */
+.overview-card { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+.overview-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+/* Modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 9999; justify-content: center; align-items: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 560px;
+  max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid #e8ecf4;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-title { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.modal-close {
+  width: 32px; height: 32px; border-radius: 8px; border: none; background: #f1f3f8;
+  cursor: pointer; font-size: 18px; color: #666; display: flex; align-items: center;
+  justify-content: center; transition: background 0.15s;
+}
+.modal-close:hover { background: #e2e6ef; }
+.modal-body { padding: 16px 24px 24px; overflow-y: auto; flex: 1; }
+.modal-subject-group { margin-bottom: 16px; }
+.modal-subject-label {
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  padding: 4px 10px; border-radius: 6px; display: inline-block; margin-bottom: 8px; color: #fff;
+}
+.modal-topic-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.modal-tag {
+  padding: 5px 12px; border-radius: 20px; font-size: 13px; border: 1.5px solid transparent;
+}
+.modal-empty { color: #9ca3af; font-size: 14px; padding: 12px 0; text-align: center; }
+.modal-count { font-size: 13px; color: #9ca3af; margin-left: 6px; font-weight: 400; }
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">正在加载学习数据…</div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>📚 我是学霸 — 学习进度看板</h1>
+    <p>六科数据实时同步 · 艾宾浩斯复习提醒</p>
+  </div>
+  <div class="header-right">
+    <div class="header-date" id="todayDate"></div>
+    <div class="sync-status" id="syncStatus">● 实时</div>
+    <button class="refresh-btn" id="refreshBtn">↻ 刷新</button>
+  </div>
+</div>
+
+<!-- Overview Stats -->
+<div class="section-title">数据总览</div>
+<div class="overview-bar">
+  <div class="overview-card green" onclick="openDetail('mastered', globalData)">
+    <div class="num" id="statMastered">—</div>
+    <div class="label">已掌握 ↗</div>
+  </div>
+  <div class="overview-card amber" onclick="openDetail('errors', globalData)">
+    <div class="num" id="statErrors">—</div>
+    <div class="label">易错点 ↗</div>
+  </div>
+  <div class="overview-card red" onclick="openDetail('dueToday', globalData)">
+    <div class="num" id="statDueToday">—</div>
+    <div class="label">今日待复习 ↗</div>
+  </div>
+  <div class="overview-card blue" onclick="openDetail('inProgress', globalData)">
+    <div class="num" id="statInProgress">—</div>
+    <div class="label">复习进行中 ↗</div>
+  </div>
+  <div class="overview-card gray" onclick="openDetail('total', globalData)">
+    <div class="num" id="statTotal">—</div>
+    <div class="label">估算总知识点 ↗</div>
+  </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Error Review Panel (shown when there are due errors) -->
+<div class="errors-panel" id="errorReviewPanel" style="display:none;">
+  <div class="panel-title"><span class="dot" style="background:#ef4444"></span>🔴 错题紧急复习</div>
+  <div id="errorReviewList"></div>
+</div>
+
+<!-- Subject Cards -->
+<div class="section-title">各科学习进度</div>
+<div class="subjects-grid" id="subjectsGrid">
+  <!-- 动态渲染 -->
+</div>
+
+<!-- Bottom: Today Tasks + Calendar + Recommendations -->
+<div class="bottom-grid">
+  <div class="panel">
+    <div class="panel-title">
+      <span class="dot" style="background:#dc2626"></span>
+      ⚠️ 今日待复习（<span id="todayDate2"></span>）
+    </div>
+    <div id="todayReviewList">
+      <div class="no-task">加载中…</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title">
+        <span class="dot" style="background:#3b82f6"></span>
+        📅 本月复习日历
+      </div>
+      <div class="review-cal-legend">
+        <div class="leg-item"><div class="leg-dot leg-today"></div>今天</div>
+        <div class="leg-item"><div class="leg-dot leg-task"></div>有复习任务</div>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+    <div class="panel" style="margin-bottom:0;">
+      <div class="panel-title">
+        <span class="dot" style="background:#8b5cf6"></span>
+        🎯 下一个学什么
+      </div>
+      <div class="recommend-grid" id="recommendGrid">
+        <div class="no-task">加载中…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer" id="footer">
+  数据来源：records/*.md + review/*.json · API: http://localhost:5177
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== 配置 ====================
+const API_BASE = "http://localhost:5177";
+const SUBJECT_ICONS = { chinese: "📖", math: "🔢", english: "🔤", science: "🔬", geography: "🌍", physics: "⚡" };
+const SUBJECT_LABELS = { chinese: "语文", math: "数学", english: "英语", science: "科学", geography: "地理", physics: "物理" };
+const SUBJECT_COLORS = { chinese: "#f59e0b", math: "#3b82f6", english: "#22c55e", science: "#8b5cf6", geography: "#0d9488", physics: "#ef4444" };
+const ROUND_LABELS = { 1: "第1轮", 2: "第2轮", 3: "第3轮", 4: "第4轮", 5: "第5轮", 6: "第6轮" };
+
+// ==================== 全局状态 ====================
+let globalData = null;
+
+// ==================== 工具函数 ====================
+
+function formatDate(d) {
+  if (!d) return "";
+  return d.slice(5); // "YYYY-MM-DD" -> "MM-DD"
+}
+
+function escHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function showToast(msg, type = "success") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function dayOfWeek(year, month, day) {
+  return new Date(year, month - 1, day).getDay(); // 0=Sun
+}
+
+// ==================== API 调用 ====================
+
+async function fetchDashboard() {
+  try {
+    const res = await fetch(`${API_BASE}/api/dashboard`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.error("API 失败:", e);
+    showToast("⚠️ 无法连接 API（请先运行 python data_api.py）", "error");
+    return null;
+  }
+}
+
+async function completeReview(subject, topic, source = "review") {
+  const btn = document.querySelector(`[data-subject="${subject}"][data-topic="${topic}"][data-source="${source}"]`);
+  if (btn) { btn.classList.add("loading"); btn.disabled = true; }
+  try {
+    const res = await fetch(`${API_BASE}/api/complete-review`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject, topic, source })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (data.completed) {
+        showToast(`🎉 "${topic}" 已完成全部6轮复习！`);
+      } else {
+        showToast(`✅ 已完成第${data.newRound}轮，下次：${formatDate(data.nextReviewDate)}`);
+      }
+      // 重新加载数据
+      await loadDashboard();
+    } else {
+      showToast(data.error || "操作失败", "error");
+    }
+  } catch (e) {
+    showToast("⚠️ 网络错误", "error");
+  }
+  if (btn) { btn.classList.remove("loading"); btn.disabled = false; }
+}
+
+async function addMastered(subject, topic, btn) {
+  try {
+    const res = await fetch(`${API_BASE}/api/add-mastered`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject, topic })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.classList.add("added");
+      btn.textContent = "✓ 已添加";
+      showToast(`📝 "${topic}" 已标记为已掌握！`);
+      setTimeout(() => loadDashboard(), 800);
+    }
+  } catch (e) {
+    showToast("⚠️ 网络错误", "error");
+  }
+}
+
+// ==================== 渲染函数 ====================
+
+function renderOverview(data) {
+  document.getElementById("todayDate").textContent = "📅 " + data.today;
+  document.getElementById("todayDate2").textContent = data.today;
+
+  const total = Object.values(data.estimatedTotal).reduce((a, b) => a + b, 0);
+  const inProgress = (data.reviewItems || []).filter(i => i.status !== "done").length;
+
+  document.getElementById("statMastered").textContent = data.overview.totalMastered;
+  document.getElementById("statErrors").textContent = data.overview.totalErrors;
+  document.getElementById("statDueToday").textContent = data.overview.totalDueToday;
+  document.getElementById("statInProgress").textContent = inProgress;
+  document.getElementById("statTotal").textContent = total;
+}
+
+// ==================== 详情弹窗 ====================
+function openDetail(type, data) {
+  if (!data) return;
+  const modal = document.getElementById("detailModal");
+  const titleEl = document.getElementById("modalTitle");
+  const bodyEl = document.getElementById("modalBody");
+  const subjects = ["chinese", "math", "english", "science", "geography", "physics"];
+
+  const labelMap = {
+    mastered:     { icon: "🟢", text: "已掌握知识点", color: "#16a34a", bg: "#dcfce7" },
+    errors:       { icon: "🟠", text: "易错题记录",   color: "#d97706", bg: "#fef3c7" },
+    dueToday:     { icon: "🔴", text: "今日待复习",   color: "#dc2626", bg: "#fee2e2" },
+    inProgress:   { icon: "🔵", text: "复习进行中",   color: "#2563eb", bg: "#dbeafe" },
+    total:        { icon: "⚪", text: "各科估算总知识点", color: "#6b7280", bg: "#f3f4f6" },
+  };
+  const cfg = labelMap[type];
+  titleEl.innerHTML = `${cfg.icon} ${cfg.text} <span class="modal-count" id="modalTotalCount"></span>`;
+
+  let html = "";
+  let grandTotal = 0;
+
+  for (const subj of subjects) {
+    const s = data.subjects[subj];
+    const color = SUBJECT_COLORS[subj];
+    let items = [];
+
+    if (type === "mastered") {
+      items = s.mastered || [];
+    } else if (type === "errors") {
+      items = s.errors || [];
+    }
+
+    if (type === "dueToday" || type === "inProgress") {
+      const allReviews = (data.reviewItems || []).filter(i => i.subject === subj);
+      if (type === "dueToday") {
+        items = allReviews.filter(i => i.nextReviewDate === data.today);
+      } else {
+        items = allReviews.filter(i => i.status !== "done");
+      }
+    }
+
+    if (type === "total") {
+      items = Array.from({ length: data.estimatedTotal[subj] }, (_, k) => ({
+        topic: `知识点 #${k + 1}`,
+        isEstimate: true,
+      }));
+    }
+
+    grandTotal += items.length;
+
+    if (items.length === 0 && type !== "total") {
+      continue;
+    }
+
+    const tagStyle = type === "total"
+      ? `background:${color}18; border-color:${color}40; color:#555`
+      : `background:${color}18; border-color:${color}40; color:${color}`;
+
+    html += `<div class="modal-subject-group">
+      <div class="modal-subject-label" style="background:${color}">${SUBJECT_LABELS[subj]}</div>
+      <div class="modal-topic-list">`;
+
+    if (items.length === 0 && type === "total") {
+      html += `<span class="modal-tag" style="${tagStyle}">${data.estimatedTotal[subj]} 个知识点</span>`;
+    } else if (items.length === 0) {
+      html += `<span class="modal-empty">暂无</span>`;
+    } else {
+      for (const item of items) {
+        if (type === "mastered") {
+          html += `<span class="modal-tag" style="${tagStyle}">✅ ${item}</span>`;
+        } else if (type === "errors") {
+          const errText = typeof item === "object" ? item.knowledgePoint || item.question : item;
+          html += `<span class="modal-tag" style="${tagStyle}">✗ ${errText}</span>`;
+        } else if (type === "dueToday") {
+          html += `<span class="modal-tag" style="${tagStyle}">📌 ${item.topic} <small style="opacity:.6">[第${item.reviewRound}轮]</small></span>`;
+        } else if (type === "inProgress") {
+          html += `<span class="modal-tag" style="${tagStyle}">📚 ${item.topic} <small style="opacity:.6">[第${item.reviewRound}轮·${item.nextReviewDate}]</small></span>`;
+        }
+      }
+    }
+
+    html += `</div></div>`;
+  }
+
+  if (grandTotal === 0 && html === "") {
+    bodyEl.innerHTML = `<div class="modal-empty">暂无数据</div>`;
+  } else {
+    bodyEl.innerHTML = html;
+  }
+
+  const countEl = document.getElementById("modalTotalCount");
+  if (countEl) countEl.textContent = `（共 ${grandTotal} 项）`;
+
+  modal.classList.add("show");
+}
+
+function closeDetail() {
+  document.getElementById("detailModal").classList.remove("show");
+}
+
+// 点击遮罩关闭
+document.getElementById("detailModal")?.addEventListener("click", function(e) {
+  if (e.target === this) closeDetail();
+});
+
+function renderSubjectCards(data) {
+  const grid = document.getElementById("subjectsGrid");
+  const subjects = ["chinese", "math", "english", "science", "geography", "physics"];
+  const CIRCUMFERENCE = 2 * Math.PI * 46; // ~289.0
+
+  grid.innerHTML = subjects.map(subj => {
+    const s = data.subjects[subj];
+    const total = data.estimatedTotal[subj] || 1;
+    const pct = Math.round((s.masteredCount / total) * 100);
+    const offset = CIRCUMFERENCE * (1 - pct / 100);
+    const color = SUBJECT_COLORS[subj];
+
+    let masteredHtml = "";
+    if (s.mastered.length === 0) {
+      masteredHtml = `<div class="geo-empty">🎯 暂无已掌握内容<br>建议从「${getDefaultStart(subj)}」开始！</div>`;
+    } else {
+      const shown = s.mastered.slice(0, 8);
+      masteredHtml = `<div class="mastered-scroll">${shown.map(m => {
+        const span = document.createElement("div");
+        span.className = "mastered-item";
+        span.textContent = m;
+        return `<div class="mastered-item" data-text="${escHtml(m)}">✓ ${escHtml(m)}</div>`;
+      }).join("")}${s.mastered.length > 8 ? `<div class="mastered-item" style="color:#8892a4">…还有 ${s.mastered.length - 8} 项</div>` : ""}</div>`;
+    }
+
+    let errorBadge = "";
+    if (s.errorsCount > 0) {
+      errorBadge = `<div class="error-badge">🔴 ${s.errorsCount} 个易错点</div>`;
+    }
+
+    return `
+    <div class="subject-card">
+      <div class="card-header">
+        <div class="subject-icon ${subj}-icon">${SUBJECT_ICONS[subj]}</div>
+        <div>
+          <div class="card-title">${SUBJECT_LABELS[subj]}</div>
+          <div class="card-subtitle">${total}个知识点</div>
+        </div>
+      </div>
+      <div class="chart-area">
+        <div class="donut-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="46" fill="none" stroke="${color}22" stroke-width="14"/>
+            <circle cx="60" cy="60" r="46" fill="none" stroke="${color}" stroke-width="14"
+              stroke-dasharray="${CIRCUMFERENCE} ${CIRCUMFERENCE}"
+              stroke-dashoffset="${offset}"
+              stroke-linecap="round"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="donut-center">
+            <div class="donut-pct" style="color:${color}">${pct}%</div>
+            <div class="donut-label">掌握率</div>
+          </div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:${color}"></span>已掌握</span><span class="legend-count">${s.masteredCount}</span></div>
+        <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:${color}44"></span>待巩固</span><span class="legend-count">${total - s.masteredCount}</span></div>
+        ${errorBadge}
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+      </div>
+      <div class="mastered-list">${masteredHtml}</div>
+    </div>`;
+  }).join("");
+}
+
+function getDefaultStart(subj) {
+  const starts = { chinese: "写字入门", math: "100以内数的认识", english: "字母书写", science: "兴趣探索", geography: "认识地球", physics: "长度和时间的测量" };
+  return starts[subj] || "基础内容";
+}
+
+function renderTodayReviews(data) {
+  const list = document.getElementById("todayReviewList");
+  const items = data.dueReviews || [];
+  const errorItems = data.dueErrors || [];
+
+  if (items.length === 0 && errorItems.length === 0) {
+    list.innerHTML = `
+    <div class="all-done">
+      <div class="all-done-icon">🎉</div>
+      <div class="all-done-text">今日没有待复习任务！</div>
+      <div class="all-done-sub">休息一下，或者开始学习新知识点</div>
+    </div>
+    <div class="tips">
+      <div class="tips-icon">💡</div>
+      <div>建议：可以学习新知识点，或复习错题本中未到期的内容</div>
+    </div>`;
+    return;
+  }
+
+  let html = "";
+
+  // Normal reviews
+  items.forEach(item => {
+    const color = SUBJECT_COLORS[item.subject] || "#6b7280";
+    const badgeClass = `badge-${item.subject}`;
+    const taskClass = `today-${item.subject}`;
+    html += `
+    <div class="today-task ${taskClass}">
+      <span class="task-badge ${badgeClass}">${SUBJECT_LABELS[item.subject]}</span>
+      <div class="task-info">
+        <div class="task-name">${item.topic}</div>
+        <div class="task-meta">${ROUND_LABELS[item.reviewRound] || "第" + item.reviewRound + "轮"} · 学习日期 ${item.learnedDate}</div>
+      </div>
+      <button class="complete-btn"
+        data-subject="${item.subject}"
+        data-topic="${item.topic}"
+        data-source="review"
+        onclick="completeReview('${item.subject}', '${item.topic.replace(/'/g, "\\'")}', 'review')">
+        ✓ 完成复习
+      </button>
+    </div>`;
+  });
+
+  // Error reviews
+  errorItems.forEach(item => {
+    html += `
+    <div class="today-task" style="background:#fef2f2;border-left:3px solid #ef4444;">
+      <span class="task-badge badge-error">❌错题</span>
+      <div class="task-info">
+        <div class="task-name">${item.knowledgePoint}</div>
+        <div class="task-meta">${ROUND_LABELS[item.reviewRound] || "第" + item.reviewRound + "轮"} · 错题日期 ${item.errorDate}</div>
+        <div class="task-extra">📌 题目：${item.question}<br>✅ 正确答案：${item.correctAnswer}</div>
+      </div>
+      <button class="complete-btn error-btn"
+        data-subject="${item.subject}"
+        data-topic="${item.knowledgePoint}"
+        data-source="error"
+        onclick="completeReview('${item.subject}', '${item.knowledgePoint.replace(/'/g, "\\'")}', 'error')">
+        ✓ 复习错题
+      </button>
+    </div>`;
+  });
+
+  const allItems = items.concat(errorItems);
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  const tomorrowCount = (data.reviewItems || []).filter(i => i.nextReviewDate === tomorrowStr).length;
+
+  list.innerHTML = html + `
+  <div class="tips">
+    <div class="tips-icon">💡</div>
+    <div>今天有 <strong>${allItems.length}项</strong> 复习任务！${tomorrowCount > 0 ? `明天还有 ${tomorrowCount} 项待复习。` : ""}</div>
+  </div>`;
+}
+
+function renderCalendar(data, todayStr) {
+  const grid = document.getElementById("calendarGrid");
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+
+  // 收集本月有任务的日期
+  const taskDates = {};
+  (data.reviewItems || []).forEach(item => {
+    if (item.nextReviewDate && item.nextReviewDate.startsWith(`${year}-${String(month).padStart(2, '0')}`)) {
+      taskDates[item.nextReviewDate] = (taskDates[item.nextReviewDate] || 0) + 1;
+    }
+  });
+
+  const firstDay = new Date(year, month - 1, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
+  let html = dayNames.map(d => `<div class="cal-header">${d}</div>`).join("");
+
+  // 空白格子
+  const startCol = firstDay === 0 ? 7 : firstDay; // 周一=1, 周日=7
+  for (let i = 1; i < startCol; i++) {
+    html += `<div class="cal-day empty"></div>`;
+  }
+
+  // 日期格子
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const isToday = dateStr === todayStr;
+    const hasTask = taskDates[dateStr] > 0;
+    const taskCount = taskDates[dateStr] || 0;
+    const cls = [
+      "cal-day",
+      isToday ? "today" : "",
+      hasTask ? "has-task" : "",
+    ].filter(Boolean).join(" ");
+
+    html += `
+    <div class="${cls}">
+      <div class="date">${day}</div>
+      ${hasTask ? `<div class="count">${taskCount}项</div>` : ""}
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+// ==================== 知识点依赖图谱 ====================
+const TOPIC_GRAPH = {
+  math: [
+    // 一年级下~二年级上（真实起点）
+    ["100以内数的认识", [], 1],
+    ["整十数加减整十数", ["100以内数的认识"], 1],
+    ["两位数加一位数（不进位）", ["100以内数的认识"], 2],
+    ["两位数减一位数（不退位）", ["100以内数的认识"], 2],
+    ["两位数加两位数（进位）", ["两位数加一位数（不进位）"], 2],
+    ["两位数减两位数（退位）", ["两位数减一位数（不退位）"], 2],
+    ["连加连减和加减混合", ["两位数加两位数（进位）", "两位数减两位数（退位）"], 3],
+    ["认识厘米（cm）", [], 2],
+    ["认识米（m）", ["认识厘米（cm）"], 2],
+    ["乘法的初步认识", ["100以内数的认识"], 3],
+    ["2-6的乘法口诀", ["乘法的初步认识"], 3],
+    ["7-9的乘法口诀", ["2-6的乘法口诀"], 3],
+    ["角的各部分名称", [], 2],
+    ["认识时间（几时几分）", [], 2],
+  ],
+  english: [
+    ["字母书写（A-Z）", [], 1],
+    ["字母音（Letter Sound）", ["字母书写（A-Z）"], 1],
+    ["身体部位单词", ["字母音（Letter Sound）"], 2],
+    ["动作指令（TPR）", ["字母音（Letter Sound）"], 2],
+    ["颜色单词", ["字母音（Letter Sound）"], 2],
+    ["数字1-10英文", ["字母音（Letter Sound）"], 2],
+    ["CVC单词拼读", ["字母音（Letter Sound）"], 3],
+    ["动物扩展词汇", ["CVC单词拼读"], 3],
+    ["简单句型", ["身体部位单词", "动作指令（TPR）"], 3],
+  ],
+  chinese: [
+    ["基本笔画", [], 1],
+    ["笔顺规则", ["基本笔画"], 1],
+    ["简单汉字书写（一）", ["基本笔画", "笔顺规则"], 1],
+    ["简单汉字书写（二）", ["简单汉字书写（一）"], 2],
+    ["偏旁部首", ["简单汉字书写（二）"], 2],
+    ["一年级上册生字", ["简单汉字书写（二）"], 2],
+    ["桥梁书阅读", ["一年级上册生字"], 3],
+    ["古诗增量", [], 2],
+  ],
+  science: [
+    ["恐龙与史前生物", [], 1],
+    ["海洋世界", [], 1],
+    ["植物生长实验", [], 1],
+    ["彩虹与光", [], 1],
+    ["火山与地球", [], 1],
+    ["磁铁实验", [], 1],
+    ["水的三态", [], 1],
+    ["人体消化", [], 1],
+  ],
+  geography: [
+    ["地球的形状与认识地球仪", [], 1],
+    ["七大洲与四大洋", ["地球的形状与认识地球仪"], 1],
+    ["中国在哪里（亚洲·北半球）", ["七大洲与四大洋"], 2],
+    ["东南西北与方向辨别", [], 1],
+    ["山与河（地形基础）", [], 2],
+    ["为什么会下雨（天气入门）", [], 2],
+    ["沙漠与森林（不同环境）", [], 2],
+    ["四季怎么来的", ["地球的形状与认识地球仪"], 3],
+  ],
+  physics: [
+    ["长度和时间的测量", [], 1],
+    ["运动的描述（参照物）", ["长度和时间的测量"], 1],
+    ["速度（v=s/t）", ["长度和时间的测量"], 2],
+    ["匀速直线运动的测量", ["速度（v=s/t）"], 2],
+    ["声音的产生与传播", [], 1],
+    ["声音的特性（音调/响度/音色）", ["声音的产生与传播"], 2],
+    ["温度与温度计", [], 1],
+    ["熔化和凝固", ["温度与温度计"], 2],
+    ["汽化和液化", ["温度与温度计"], 2],
+    ["光的直线传播", [], 1],
+    ["光的反射定律", ["光的直线传播"], 2],
+    ["平面镜成像", ["光的反射定律"], 2],
+    ["光的折射", ["光的直线传播"], 3],
+    ["透镜分类与基本概念", [], 1],
+    ["凸透镜成像规律", ["透镜分类与基本概念"], 2],
+    ["质量与天平使用", [], 1],
+    ["密度（ρ=m/V）", ["质量与天平使用"], 2],
+    ["力的概念与力的示意图", [], 1],
+    ["重力（G=mg）", ["力的概念与力的示意图"], 2],
+    ["牛顿第一定律（惯性）", ["力的概念与力的示意图"], 2],
+    ["二力平衡", ["力的概念与力的示意图"], 2],
+    ["摩擦力", ["力的概念与力的示意图"], 3],
+    ["压强（p=F/S）", ["力的概念与力的示意图"], 2],
+    ["液体压强（p=ρgh）", ["压强（p=F/S）"], 3],
+    ["浮力与阿基米德原理", ["液体压强（p=ρgh）"], 3],
+    ["功（W=Fs）与功率（P=W/t）", ["力的概念与力的示意图"], 2],
+    ["动能和势能", ["功（W=Fs）与功率（P=W/t）"], 3],
+    ["杠杆", ["力的概念与力的示意图"], 2],
+    ["滑轮与机械效率", ["杠杆"], 3],
+    ["电流和电路基础", [], 1],
+    ["串联与并联", ["电流和电路基础"], 2],
+    ["电压与电阻", ["电流和电路基础"], 2],
+    ["欧姆定律（I=U/R）", ["电压与电阻"], 3],
+    ["电功率（P=UI）", ["欧姆定律（I=U/R）"], 3],
+    ["电与磁（电磁感应）", ["电流和电路基础"], 3],
+  ]
+};
+
+function getRecommendationReason(topic, dep, masteredTopics) {
+  if (!dep || dep.length === 0) return "🌟 基础知识点，建议优先掌握";
+  const unmet = dep.filter(d => !masteredTopics.includes(d));
+  if (unmet.length === 0) return "✅ 依赖已满足，可以开始学习";
+  return `📌 建议先掌握：${unmet.slice(0,2).join("、")}`;
+}
+
+function smartRecommend(subjects, masteredTopics, reviewItems) {
+  const recs = [];
+  const mastered = new Set(masteredTopics);
+  const inReview = new Set(reviewItems.map(i => i.topic));
+
+  for (const subj of Object.keys(TOPIC_GRAPH)) {
+    const graph = TOPIC_GRAPH[subj] || [];
+    for (const [topic, deps] of graph) {
+      if (mastered.has(topic) || inReview.has(topic)) continue;
+      // 检查依赖是否已满足
+      const unmet = (deps || []).filter(d => !mastered.has(d));
+      if (unmet.length > 0) continue; // 跳过依赖未满足的
+      recs.push({ subj, topic, reason: "✅ 依赖已满足，可以开始学习" });
+    }
+  }
+
+  // 按科目平衡，优先推荐未开始的科目
+  const bySubject = {};
+  for (const r of recs) {
+    bySubject[r.subj] = bySubject[r.subj] || [];
+    bySubject[r.subj].push(r);
+  }
+
+  const result = [];
+  for (const subj of Object.keys(bySubject)) {
+    if (bySubject[subj].length > 0) {
+      result.push(bySubject[subj][0]);
+    }
+  }
+  return result.slice(0, 4); // 最多4条
+}
+
+function renderRecommendations(data) {
+  const grid = document.getElementById("recommendGrid");
+
+  // 收集所有已掌握的知识点（来自 mastered.md）
+  const masteredTopics = new Set();
+  for (const subj of Object.keys(data.subjects || {})) {
+    for (const m of (data.subjects[subj].mastered || [])) {
+      masteredTopics.add(m);
+    }
+  }
+
+  const reviewTopics = new Set((data.reviewItems || []).map(i => i.topic));
+  const recs = smartRecommend(data.subjects, masteredTopics, data.reviewItems || []);
+
+  if (recs.length === 0) {
+    grid.innerHTML = `<div class="no-task">🌟 太棒了！推荐知识点都已加入学习计划。<br>可以继续学习新内容或复习错题本。</div>`;
+    return;
+  }
+
+  grid.innerHTML = recs.map(rec => `
+    <div class="rec-item rec-${rec.subj}">
+      <div class="rec-icon">${SUBJECT_ICONS[rec.subj]}</div>
+      <div class="rec-content">
+        <div class="rec-name">${rec.topic}</div>
+        <div class="rec-reason">${SUBJECT_LABELS[rec.subj]} · ${rec.reason}</div>
+      </div>
+      <button class="rec-add-btn"
+        onclick="addMastered('${rec.subj}', '${rec.topic.replace(/'/g, "\\'")}', this)">
+        ✓ 我学会了
+      </button>
+    </div>
+  `).join("");
+}
+
+function renderErrorReviews(data) {
+  const panel = document.getElementById("errorReviewPanel");
+  const list = document.getElementById("errorReviewList");
+  const dueErrors = data.dueErrors || [];
+
+  if (dueErrors.length === 0) {
+    panel.style.display = "none";
+    return;
+  }
+
+  panel.style.display = "block";
+  list.innerHTML = dueErrors.map(item => `
+    <div class="today-task" style="background:#fef2f2;border-left:3px solid #ef4444;margin-bottom:8px;">
+      <span class="task-badge badge-error">❌ 错题</span>
+      <div class="task-info">
+        <div class="task-name">${item.knowledgePoint}</div>
+        <div class="task-meta">${ROUND_LABELS[item.reviewRound]} · 错题日期 ${item.errorDate}</div>
+        <div class="task-extra">📌 题目：${item.question}<br>✅ 正确答案：${item.correctAnswer}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// ==================== 主入口 ====================
+
+async function loadDashboard() {
+  const overlay = document.getElementById("loadingOverlay");
+  overlay.classList.remove("hidden");
+
+  const data = await fetchDashboard();
+  if (!data) {
+    // 降级显示
+    renderFallbackUI();
+    return;
+  }
+
+  globalData = data;
+
+  renderOverview(data);
+  renderSubjectCards(data);
+  renderTodayReviews(data);
+  renderCalendar(data, data.today);
+  renderRecommendations(data);
+  renderErrorReviews(data);
+
+  overlay.classList.add("hidden");
+}
+
+function renderFallbackUI() {
+  document.getElementById("loadingOverlay").classList.add("hidden");
+  showToast("⚠️ API 未连接，请运行 python data_api.py", "error");
+}
+
+// ==================== 初始化 ====================
+
+document.getElementById("refreshBtn").addEventListener("click", loadDashboard);
+
+// 启动
+loadDashboard();
+
+// 每30秒自动刷新
+setInterval(loadDashboard, 30000);
+</script>
+</body>
+</html>
