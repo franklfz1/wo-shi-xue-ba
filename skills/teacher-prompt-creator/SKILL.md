@@ -253,7 +253,9 @@ python artifacts_init.py --subject <subject_id>
 | geography | 地理 | #8B5CF6（紫） |
 | physics | 物理 | #06B6D4（青） |
 
-每次只处理一科，输出清单后再继续下一科。全部完成后由主 skill 执行 Step 4（启动看板）和 Step 5（输出总结）。
+每次只处理一科，输出清单后再继续下一科。全部完成后，由主 skill 执行 **Step 3d（清理未选学科）**、Step 4（启动看板）和 Step 5（输出总结）。
+
+> ⚠️ 清理未选学科：6科全集 `["math","chinese","english","science","geography","physics"]` 减去 `selected_subjects`，即为待删除学科。对每个待删除学科删除 `teachers/<subject>.md`、`teachers/<subject>-faq.md`（如有）、`records/<subject>/`（如有），并从 `review/next-review.json`、`dashboard.html` 的 `SUBJECTS` 数组、`data_api.py` 的 `subjects`/`subject_labels` 中移除。
 
 ## Global Constraints
 

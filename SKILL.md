@@ -77,6 +77,30 @@ python artifacts_init.py --init
 
 > 用户也可以只说"初始化数学老师"单独配置一科（此时会额外询问年级）。
 
+#### 3d: 清理未选学科
+
+用户选了哪些科目就只保留哪些，**未选的学科模板全部删除**，保持系统干净。
+
+**预定义6科 ID**：`math, chinese, english, science, geography, physics`
+
+**未选学科 = 6科全集 - selected_subjects**
+
+对每个未选的学科，删除以下文件/目录：
+
+| 删除目标 | 路径 |
+|---------|------|
+| 教师提示词 | `teachers/<subject>.md` |
+| FAQ 文件 | `teachers/<subject>-faq.md`（如存在） |
+| 学习记录目录 | `records/<subject>/`（整个目录） |
+
+同时更新以下配置文件：
+
+1. **`review/next-review.json`**：从 `subjects` 数组中移除未选学科 ID
+2. **`dashboard.html`**：从 JavaScript `SUBJECTS` 数组中移除未选学科的卡片对象
+3. **`data_api.py`**：从 `subjects` 列表和 `subject_labels` 字典中移除未选学科
+
+> ⚠️ 删除前先列出待删除清单，确认后再执行。兴趣驱动型学科（科学/地理）如果知识库中没有对应教材，`records/<subject>/` 可能不存在，跳过即可。
+
 ### Step 4: 启动看板
 ```bash
 nohup python data_api.py > /tmp/data_api.log 2>&1 &
@@ -91,6 +115,7 @@ nohup python data_api.py > /tmp/data_api.log 2>&1 &
 ✅ 产物目录已初始化
 ✅ {N}科教师提示词已生成（{科目列表}）
 ✅ 待学知识点已填充
+✅ 未选学科已清理（{已删除的学科列表}，或"无"）
 ✅ 看板已启动：http://localhost:5177/
 
 💡 现在可以说"切换成XX老师"开始学习
