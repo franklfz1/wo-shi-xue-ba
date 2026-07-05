@@ -148,8 +148,13 @@ class BlockArrangement:
                 for row in range(max_h)]
 
     def top_view_grid(self) -> list:
-        """俯视图的 2D 布尔网格（row=x从上到下, col=y从左到右）。"""
-        return self.top_view()
+        """俯视图的 2D 布尔网格（row=y从近到远, col=x从左到右）。
+        与 front_view_grid 共享 x 轴（col=x 左→右），
+        y 轴为深度方向（row=y 近→远，上→下）。
+        """
+        return [[1 if self.heights[x][y] > 0 else 0
+                 for x in range(self.width)]
+                for y in range(self.depth)]
 
     def back_view_grid(self) -> list:
         """背面视图的 2D 布尔网格（row=从上到下, col=x反向）。"""
@@ -722,6 +727,20 @@ class BlockArrangement:
         # 正面视图最大高度 <= 全局最大高度
         assert max(fh) == arr5.max_height()
         print(f"  测试5 通过: 视图尺寸一致性验证")
+
+        # 测试 5.5: top_view_grid 方向验证
+        arr_t = BlockArrangement(3, 2)  # width=3, depth=2
+        arr_t.place(0, 0, 1)  # x=0, y=0: 有方块
+        arr_t.place(2, 1, 1)  # x=2, y=1: 有方块
+        tg = arr_t.top_view_grid()
+        # grid[y][x]: y=0(near) → [1,0,0], y=1(far) → [0,0,1]
+        assert tg == [[1, 0, 0], [0, 0, 1]], f"top_view_grid 方向错误: {tg}"
+        assert len(tg) == 2  # depth 行
+        assert len(tg[0]) == 3  # width 列
+        # 与 front_view_grid 共享 x 轴：列数 = width
+        fg_t = arr_t.front_view_grid()
+        assert len(fg_t[0]) == len(tg[0])  # 都 = width
+        print(f"  测试5.5 通过: top_view_grid 方向正确, {tg}")
 
         # 测试 6: to_lesson_data 序列化
         data = arr.to_lesson_data()

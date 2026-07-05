@@ -822,24 +822,28 @@ function createScene(containerId, blocks, gridSize) {
       }
     },
     lookFromFront: function() {
+      camera.up.set(0, 1, 0);
       camera.position.set(0, gridSize.maxHeight * 0.8 + 1, gridSize.depth * 3 + 4);
+      camera.lookAt(0, gridSize.maxHeight * 0.4, 0);
       if (controls) { controls.target.set(0, gridSize.maxHeight * 0.4, 0); controls.update(); }
-      else { camera.lookAt(0, gridSize.maxHeight * 0.4, 0); }
     },
     lookFromSide: function() {
+      camera.up.set(0, 1, 0);
       camera.position.set(-(gridSize.width * 3 + 4), gridSize.maxHeight * 0.8 + 1, 0);
+      camera.lookAt(0, gridSize.maxHeight * 0.4, 0);
       if (controls) { controls.target.set(0, gridSize.maxHeight * 0.4, 0); controls.update(); }
-      else { camera.lookAt(0, gridSize.maxHeight * 0.4, 0); }
     },
     lookFromTop: function() {
-      camera.position.set(0.01, gridSize.maxHeight * 4 + 6, 0.01);
+      camera.up.set(0, 0, -1);
+      camera.position.set(0, gridSize.maxHeight * 4 + 6, 0);
+      camera.lookAt(0, 0, 0);
       if (controls) { controls.target.set(0, 0, 0); controls.update(); }
-      else { camera.lookAt(0, 0, 0); }
     },
     resetCamera: function() {
+      camera.up.set(0, 1, 0);
       camera.position.set(camPos[0], camPos[1], camPos[2]);
+      camera.lookAt(0, gridSize.maxHeight * 0.4, 0);
       if (controls) { controls.target.set(0, gridSize.maxHeight * 0.4, 0); controls.update(); }
-      else { camera.lookAt(0, gridSize.maxHeight * 0.4, 0); }
     }
   };
 }
@@ -1232,6 +1236,18 @@ function initReverse() {
       return col.map(function(h) { return h > 0 ? 1 : 0; });
     });
   }
+  function topViewGrid(tv) {
+    // Convert raw grid[x][y] to display grid[y][x] (row=y near→far, col=x left→right)
+    var grid = [];
+    for (var y = 0; y < gridSize.depth; y++) {
+      var row = [];
+      for (var x = 0; x < gridSize.width; x++) {
+        row.push((tv[x] && tv[x][y]) || 0);
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
 
   function frontViewGrid(fh) {
     var maxH = Math.max.apply(null, fh.concat([0]));
@@ -1271,7 +1287,7 @@ function initReverse() {
 
     drawViewGrid(document.getElementById('rev-student-canvas-front'), frontViewGrid(sfh), '从正面看', false);
     drawViewGrid(document.getElementById('rev-student-canvas-side'), sideViewGrid(ssh), '从左面看', false);
-    drawViewGrid(document.getElementById('rev-student-canvas-top'), stv, '从上面看', true);
+    drawViewGrid(document.getElementById('rev-student-canvas-top'), topViewGrid(stv), '从上面看', true);
 
     // Update cube count
     var count = 0;
