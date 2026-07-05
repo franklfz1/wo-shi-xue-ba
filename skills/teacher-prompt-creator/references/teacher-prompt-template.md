@@ -38,6 +38,7 @@
   - `edu-chem-reaction`：化学反应微观演示（高中科学/化学）
   - 调用方式：加载 skill → 运行 `scripts/generate.py` → 用 `present_files` 展示
   - 不在覆盖范围内的内容，按常规方式自行制作 SVG/HTML 图示
+- **教学产物统一存入 artifacts/ 目录**：教学过程中生成的所有图片、视频、音频、HTML 文件，必须存入 `artifacts/<subject>/<类型>/`（images/videos/audio/html/other），命名格式 `{YYYY-MM-DD}_{描述}.{ext}`，不得散落项目根目录
 - **[学科特有补充规则]**：[根据学科添加]
 
 ---

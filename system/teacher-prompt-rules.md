@@ -110,6 +110,7 @@
 - **一张图只讲一个核心概念**：不要塞太多东西
 - **图示必须精确**：刻度均匀、比例正确、颜色有区分意义
 - **优先使用内置 EduLab 交互教学技能**：当教学内容匹配系统内置的 EduLab 子技能时，必须优先调用对应技能生成交互页面
+- **教学产物统一存入 artifacts/ 目录**：教学过程中生成的所有图片、视频、音频、HTML 文件，必须存入 `artifacts/<subject>/<类型>/`，不得散落项目根目录
 ```
 
 #### 3.3.0 内置 EduLab 交互教学技能对照表
@@ -129,6 +130,40 @@
 2. **不匹配时自行绘制**：不在覆盖范围的内容，按常规方式自行制作 SVG/HTML 图示
 3. **调用流程**：加载 skill → 读取 `SKILL.md` 了解参数 → 运行 `scripts/generate.py` 生成自包含 HTML → 用 `present_files` 展示
 4. **不可修改 kernel**：技能 `lib/` 目录下的计算核心不可修改，确保数学精确性
+
+#### 3.3.0a 教学产物存放规范（全局强制）
+
+教学过程中生成的所有文件（SVG/HTML/图片/视频/音频）必须按以下结构存入 `artifacts/` 目录，**不得散落项目根目录或其他位置**：
+
+```
+artifacts/
+├── math/
+│   ├── images/      # 教学图片（PNG/JPG/SVG）
+│   ├── videos/      # 教学视频
+│   ├── audio/       # 教学音频
+│   ├── html/        # 交互式 HTML 页面
+│   └── other/       # 其他产物
+├── chinese/
+│   └── ...（同上）
+├── english/
+│   └── ...
+└── <其他学科>/
+```
+
+**命名规则**：`{YYYY-MM-DD}_{描述}.{ext}`
+
+| 产物类型 | 存放目录 | 示例 |
+|---------|---------|------|
+| SVG/HTML 教学图示 | `html/` | `2026-07-05_进位加法演示.html` |
+| ImageGen 生成的图片 | `images/` | `2026-07-05_登鹳雀楼水墨画.png` |
+| edge-tts 生成的音频 | `audio/` | `2026-07-05_静夜思朗读.mp3` |
+| 视频制作流水线产物 | `videos/` | `2026-07-05_面积概念.mp4` |
+| 其他（PDF/JSON 等） | `other/` | `2026-07-05_练习题打印版.pdf` |
+
+**编写提示词时的要求**：
+1. 在"图文交互教学规则"模块中，必须明确写出"教学产物存入 `artifacts/<subject>/<类型>/`"
+2. 教学日志中"教学产物"字段必须填写 `artifacts/` 下的相对路径，如 `artifacts/math/html/2026-07-05_进位加法演示.html`
+3. 如无教学产物，填"无"
 
 **学科特有补充规则（按需添加）：**
 
@@ -519,7 +554,10 @@
 |------|----------|
 | 错题记录 | `records/<subject>/errors.md` |
 | 已掌握知识点 | `records/<subject>/mastered.md` |
+| 待学知识点 | `records/<subject>/todo.md` |
 | 复习日志 | `records/<subject>/review-log.md`（可选） |
+| 教学日志 | `records/<subject>/teaching-log.md` |
+| 教学产物 | `artifacts/<subject>/<类型>/`（images/videos/audio/html/other） |
 | 教材知识库 | `knowledge-base/<subject>/` |
 | 程序生成习题 | `question-bank/<subject>/` |
 
@@ -596,3 +634,4 @@ touch records/<subject>/errors.md
 | v1.2 | v1.2 | 新增探索卡片教学模式（科学等兴趣学科一次性多轮卡片）；教学理念补充引导思考和卡片模式规范 |
 | 2026-06-25 | v3.0 | 新增知识库与习题库体系：`knowledge-base/` 教材知识库 + `question-bank/` 程序生成习题库；3.7 练习出题模式新增"出题优先级"；3.9 防幻觉规则新增"教材知识库优先"；4.3 文件路径增加 knowledge-base 和 question-bank；支持学科扩展至 math/chinese/english/science/geography/physics |
 | 2026-07-05 | v3.1 | 图文交互教学规则新增 EduLab 交互教学技能对照表（3.3.0），5个内置子技能按学科/场景匹配，教学时优先调用 |
+| 2026-07-05 | v3.2 | 新增教学产物存放规范（3.3.0a），教学过程中生成的所有文件必须存入 `artifacts/<subject>/<类型>/`，不得散落根目录；文件路径约定表新增教学产物路径 |

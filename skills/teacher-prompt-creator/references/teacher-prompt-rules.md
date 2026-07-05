@@ -61,7 +61,38 @@
 - 一张图只讲一个核心概念：不要塞太多东西
 - 图示必须精确：刻度均匀、比例正确、颜色有区分意义
 - **优先使用内置 EduLab 交互教学技能**：当教学内容匹配以下技能时，必须优先调用对应技能生成精确交互页面，而非自行手绘 SVG/HTML
+- **教学产物统一存入 artifacts/ 目录**：教学过程中生成的所有图片、视频、音频、HTML 文件，必须存入 `artifacts/<subject>/<类型>/`，不得散落项目根目录或其他位置
 ```
+
+### 教学产物存放规范（全局强制）
+
+教学过程中生成的所有文件（SVG/HTML/图片/视频/音频）必须按以下结构存放：
+
+```
+artifacts/
+├── math/
+│   ├── images/      # 教学图片（PNG/JPG/SVG）
+│   ├── videos/      # 教学视频
+│   ├── audio/       # 教学音频
+│   ├── html/        # 交互式 HTML 页面
+│   └── other/       # 其他产物
+├── chinese/
+│   └── ...
+└── <其他学科>/
+```
+
+**命名规则**：`{YYYY-MM-DD}_{描述}.{ext}`，如 `2026-07-05_进位加法演示.html`
+
+**类型映射**：
+| 产物类型 | 目录 | 示例 |
+|---------|------|------|
+| SVG/HTML 教学图示 | `html/` | 可交互的进位加法演示页 |
+| ImageGen 生成的图片 | `images/` | 古诗配图、场景图 |
+| edge-tts 生成的音频 | `audio/` | 课文朗读 |
+| 视频制作流水线产物 | `videos/` | 教学短视频 |
+| 其他（PDF/JSON 等） | `other/` | 练习题打印版 |
+
+> ⚠️ 教学日志中"教学产物"字段必须填写 `artifacts/` 下的相对路径，如 `artifacts/math/html/2026-07-05_进位加法演示.html`
 
 ### 内置 EduLab 交互教学技能对照表
 
@@ -276,6 +307,7 @@
 | 待学 | `records/<subject>/todo.md` |
 | 复习日志 | `records/<subject>/review-log.md` |
 | 教学日志 | `records/<subject>/teaching-log.md` |
+| 教学产物 | `artifacts/<subject>/<类型>/`（images/videos/audio/html/other） |
 | 教材知识库 | `knowledge-base/<subject>/` |
 | 习题库 | `question-bank/<subject>/` |
 | 事实锚点 | `system/knowledge-anchors/<subject>.md` |
