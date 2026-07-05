@@ -443,7 +443,7 @@ body {
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 var LESSON_DATA = __LESSON_DATA__;
@@ -768,16 +768,26 @@ function createScene(containerId, blocks, gridSize) {
   }
   scene.add(cubeGroup);
 
-  var controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.target.set(0, gridSize.maxHeight * 0.4, 0);
-  controls.minDistance = 3;
-  controls.maxDistance = 30;
+  var controls = null;
+  if (typeof THREE.OrbitControls !== 'undefined') {
+    try {
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.target.set(0, gridSize.maxHeight * 0.4, 0);
+      controls.minDistance = 3;
+      controls.maxDistance = 30;
+    } catch (e) {
+      console.warn('OrbitControls init failed:', e);
+      controls = null;
+    }
+  } else {
+    console.warn('OrbitControls not loaded, rotation disabled');
+  }
 
   function animate() {
     requestAnimationFrame(animate);
-    controls.update();
+    if (controls) controls.update();
     renderer.render(scene, camera);
   }
   animate();
@@ -813,23 +823,23 @@ function createScene(containerId, blocks, gridSize) {
     },
     lookFromFront: function() {
       camera.position.set(0, gridSize.maxHeight * 0.8 + 1, gridSize.depth * 3 + 4);
-      controls.target.set(0, gridSize.maxHeight * 0.4, 0);
-      controls.update();
+      if (controls) { controls.target.set(0, gridSize.maxHeight * 0.4, 0); controls.update(); }
+      else { camera.lookAt(0, gridSize.maxHeight * 0.4, 0); }
     },
     lookFromSide: function() {
       camera.position.set(-(gridSize.width * 3 + 4), gridSize.maxHeight * 0.8 + 1, 0);
-      controls.target.set(0, gridSize.maxHeight * 0.4, 0);
-      controls.update();
+      if (controls) { controls.target.set(0, gridSize.maxHeight * 0.4, 0); controls.update(); }
+      else { camera.lookAt(0, gridSize.maxHeight * 0.4, 0); }
     },
     lookFromTop: function() {
       camera.position.set(0.01, gridSize.maxHeight * 4 + 6, 0.01);
-      controls.target.set(0, 0, 0);
-      controls.update();
+      if (controls) { controls.target.set(0, 0, 0); controls.update(); }
+      else { camera.lookAt(0, 0, 0); }
     },
     resetCamera: function() {
       camera.position.set(camPos[0], camPos[1], camPos[2]);
-      controls.target.set(0, gridSize.maxHeight * 0.4, 0);
-      controls.update();
+      if (controls) { controls.target.set(0, gridSize.maxHeight * 0.4, 0); controls.update(); }
+      else { camera.lookAt(0, gridSize.maxHeight * 0.4, 0); }
     }
   };
 }
@@ -1127,61 +1137,63 @@ function initReverse() {
     }
   }
 
-  container.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-  });
-
-  container.addEventListener('mousedown', function(e) {
+  // Left click: increase height (use 'click' to avoid firing during drag-rotate)
+  container.addEventListener('click', function(e) {
     var rect = container.getBoundingClientRect();
     mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(mouse, sceneObj.camera);
 
-    if (e.button === 2) {
-      // Right click: decrease height
-      // Check top planes first (from highest)
-      var topHits = raycaster.intersectObjects(topPlanes);
-      if (topHits.length > 0) {
-        var hit = topHits[0].object;
-        var gx = hit._gridX, gy = hit._gridY;
-        if (studentHeights[gx][gy] > 0) {
-          studentHeights[gx][gy]--;
-          updateStudentView();
-        }
+    // Check top planes first (to stack on top)
+    var topHits2 = raycaster.intersectObjects(topPlanes);
+    for (var i = 0; i < topHits2.length; i++) {
+      var thit = topHits2[i].object;
+      var tgx = thit._gridX, tgy = thit._gridY, tgz = thit._gridZ;
+      if (studentHeights[tgx][tgy] === tgz && tgz < gridSize.maxHeight) {
+        studentHeights[tgx][tgy]++;
+        updateStudentView();
         return;
       }
-      // Check ground planes
-      var groundHits = raycaster.intersectObjects(groundPlanes);
-      if (groundHits.length > 0) {
-        var ghit = groundHits[0].object;
-        var ggx = ghit._gridX, ggy = ghit._gridY;
-        if (studentHeights[ggx][ggy] > 0) {
-          studentHeights[ggx][ggy]--;
-          updateStudentView();
-        }
+    }
+    // Check ground planes
+    var groundHits2 = raycaster.intersectObjects(groundPlanes);
+    if (groundHits2.length > 0) {
+      var ghit2 = groundHits2[0].object;
+      var ggx2 = ghit2._gridX, ggy2 = ghit2._gridY;
+      if (studentHeights[ggx2][ggy2] < gridSize.maxHeight) {
+        studentHeights[ggx2][ggy2]++;
+        updateStudentView();
       }
-    } else if (e.button === 0) {
-      // Left click: increase height
-      // Check top planes first (to stack on top)
-      var topHits2 = raycaster.intersectObjects(topPlanes);
-      for (var i = 0; i < topHits2.length; i++) {
-        var thit = topHits2[i].object;
-        var tgx = thit._gridX, tgy = thit._gridY, tgz = thit._gridZ;
-        if (studentHeights[tgx][tgy] === tgz && tgz < gridSize.maxHeight) {
-          studentHeights[tgx][tgy]++;
-          updateStudentView();
-          return;
-        }
+    }
+  });
+
+  // Right click: decrease height
+  container.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    var rect = container.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, sceneObj.camera);
+
+    // Check top planes first (from highest)
+    var topHits = raycaster.intersectObjects(topPlanes);
+    if (topHits.length > 0) {
+      var hit = topHits[0].object;
+      var gx = hit._gridX, gy = hit._gridY;
+      if (studentHeights[gx][gy] > 0) {
+        studentHeights[gx][gy]--;
+        updateStudentView();
       }
-      // Check ground planes
-      var groundHits2 = raycaster.intersectObjects(groundPlanes);
-      if (groundHits2.length > 0) {
-        var ghit2 = groundHits2[0].object;
-        var ggx2 = ghit2._gridX, ggy2 = ghit2._gridY;
-        if (studentHeights[ggx2][ggy2] < gridSize.maxHeight) {
-          studentHeights[ggx2][ggy2]++;
-          updateStudentView();
-        }
+      return;
+    }
+    // Check ground planes
+    var groundHits = raycaster.intersectObjects(groundPlanes);
+    if (groundHits.length > 0) {
+      var ghit = groundHits[0].object;
+      var ggx = ghit._gridX, ggy = ghit._gridY;
+      if (studentHeights[ggx][ggy] > 0) {
+        studentHeights[ggx][ggy]--;
+        updateStudentView();
       }
     }
   });
