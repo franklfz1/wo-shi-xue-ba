@@ -1,17 +1,28 @@
 ---
 name: wo-shi-xue-ba
 version: 2.0.0
-description: 基于 AI 和艾宾浩斯遗忘曲线的小学低年级辅助学习系统
+description: 适合 K12 全年级的 AI 辅助自主学习基座系统，配合 AI Agent 使用
 agent_created: true
 ---
 
 # 我是学霸 — AI 辅助学习系统
 
-> 一个基于艾宾浩斯遗忘曲线的本地化学习系统，用 AI 老师引导教学，自动管理复习节奏。
+> 一个适合 K12 全年级的 AI 辅助自主学习基座系统，配合 AI Agent 使用，基于艾宾浩斯遗忘曲线自动管理复习节奏。
 
 ## 系统概览
 
-**我是学霸**是一套完整的 AI 辅助学习框架，面向小学低年级（1-3年级）儿童，由家长操作。核心特点：
+**我是学霸**是一套面向 K12（学前~高三）全年级的 AI 辅助学习基座系统。它本身不含 AI 能力，而是通过结构化的提示词、知识库、复习引擎和看板，为任意 AI Agent 提供完整的教学框架支撑。
+
+**支持的 AI Agent**（不限于以下）：
+
+| AI Agent | 支持程度 | 说明 |
+|----------|---------|------|
+| [WorkBuddy](https://www.codebuddy.cn/download) | ⭐ 完整支持 | 自动加载内置 Skill，初始化/出题/复习全自动化 |
+| [TRAE](https://www.trae.ai/) | ⭐ 完整支持 | 同 WorkBuddy，支持 Skill 自动加载 |
+| [Codex](https://openai.com/index/openai-codex/) | ✅ 基本支持 | 需手动指定 Skill 文件，核心功能可用 |
+| Claude / ChatGPT 等 | ⚠️ 手动模式 | 手动复制提示词到对话，看板和复习引擎仍可用 |
+
+核心特点：
 
 - **6科AI老师**：语文、数学、英语、科学、地理、物理——每个都有完整的提示词、知识体系和出题规则
 - **艾宾浩斯复习引擎**：自动推进 6 轮复习（1-2-4-7-15-30天），到期自动提醒
@@ -22,14 +33,15 @@ agent_created: true
 
 ## 快速开始
 
-### 0. 安装 WorkBuddy Desktop（前提条件）
+### 0. 选择并安装 AI Agent（前提条件）
 
-本系统依赖 WorkBuddy 作为 AI 老师的运行环境：
+本系统是一个**基座框架**，需要配合 AI Agent 才能运行 AI 老师功能。推荐以下任一：
 
-- **下载地址**：https://www.codebuddy.cn/download
-- **安装后**：打开 WorkBuddy，将项目目录设为工作目录
+- **[WorkBuddy](https://www.codebuddy.cn/download)**：完整支持，自动加载内置 Skill
+- **[TRAE](https://www.trae.ai/)**：完整支持，自动加载内置 Skill
+- **[Codex](https://openai.com/index/openai-codex/)** 及其他支持 Skill/MCP 的 AI Agent：基本支持
 
-> 也支持其他 AI 工具（Claude、ChatGPT 等），但需手动复制提示词到对话中，且无法使用内置 Skill 的自动化功能。
+安装后，将项目目录设为工作目录即可。本系统的内置 Skill 会被 Agent 自动识别。
 
 ### 1. 下载项目
 
@@ -65,7 +77,7 @@ pip install -r requirements.txt
 
 ### 3. 一键初始化（⭐ 新用户必读）
 
-安装完依赖后，在 WorkBuddy 对话中说一个字：
+安装完依赖后，在 AI Agent 对话中说一个字：
 
 > **初始化**
 
@@ -104,7 +116,7 @@ pip install -r requirements.txt
 
 ### 4. 开始学习
 
-初始化完成后，看板已自动启动。在 WorkBuddy 对话中告诉 AI 老师你要学什么：
+初始化完成后，看板已自动启动。在 AI Agent 对话中告诉 AI 老师你要学什么：
 
 - "切换成数学老师" → 加载 `teachers/math.md` 提示词
 - "切换成语文老师" → 加载 `teachers/chinese.md` 提示词
@@ -292,7 +304,7 @@ python exercise_engine.py -t "古诗词|生字书写"  # 指定知识点
 - **知识点复习**：6轮，间隔 1-2-4-7-15-30 天
 - **错题复习**：5轮，间隔 1-2-3-5-7 天
 - 标记一个知识点为"已掌握"时，自动建立复习计划
-- 每日可通过 WorkBuddy 自动化触发复习提醒
+- 每日可通过 AI Agent 的自动化功能触发复习提醒
 - 看板页面可交互勾选完成复习，自动推进下一轮
 
 ## 数据全本地化
